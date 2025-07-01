@@ -1,4 +1,3 @@
-
 from pygame import *
 from random import randint
 
@@ -6,7 +5,7 @@ font.init()
 font1 = font.Font(None, 36)
 
 # Archivos
-Bandera = 
+img_ast = "asteroid.png"
 img_back = "galaxy.jpg"
 img_hero = "rocket.png"
 img_enemy = "ufo.png"
@@ -17,6 +16,9 @@ score = 0
 lost = 0
 max_lost = 3
 goal = 10
+life = 3
+rel_time = False
+num_fire = 0
 
 win_width = 700
 win_height = 500
@@ -74,8 +76,14 @@ for i in range(5):
     monster = Enemy(img_enemy, randint(80, win_width - 80), -40, 80, 50, randint(1, 5))
     monsters.add(monster)
 
+asteroids = sprite.Group()
+for i in range(1, 3):
+    asteroid = Enemy(img_ast, randint(30, win_width), -40, 80, 50, randint(1, 7))
+    asteroids.add(asteroid)
+
 bullets = sprite.Group()
 ship = Player(img_hero, 5, win_height - 100, 80, 100, 10)
+
 
 # Música
 mixer.init()
@@ -94,7 +102,10 @@ while run:
             run = False
         elif e.type == KEYDOWN:
             if e.key == K_SPACE:
-                ship.fire()
+                if num_fire < 5 and rel_time == False:
+                    num_fire = num_fire + 1
+                    fire_sound.play()
+                    ship.fire()
 
     if not finish:
         window.blit(background, (0, 0))
@@ -107,12 +118,24 @@ while run:
         bullets.update()
         bullets.draw(window)
 
+        asteroids.update()
+        asteroids.draw(window)
+
         # Colisiones
         collisions = sprite.groupcollide(monsters, bullets, True, True)
         for c in collisions:
             score += 1
             new_enemy = Enemy(img_enemy, randint(80, win_width - 80), -40, 80, 50, randint(1, 5))
             monsters.add(new_enemy)
+
+            if sprite.spritecollide(ship, monsters, False) or sprite.spritecollide(ship, asteroids, False):
+               sprite.spritecollide(ship, monsters, True)
+               sprite.spritecollide(ship, asteroids, True)
+               life = life -1
+
+            if life == 0 or lost >= max_lost:
+                finish = True
+                window.blit(lost, (200, 200))
 
         # Puntajes
         text = font1.render("Puntaje: " + str(score), True, (255, 255, 255))
